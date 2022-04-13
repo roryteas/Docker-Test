@@ -1,0 +1,68 @@
+<html>
+    <head>
+        <style>
+        table {            
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 18px;
+            border-collapse: collapse;
+            width: 99%;           
+        }
+        td , th {
+            border: 1px solid #000000;
+            text-align: left;
+            padding: 8px;
+            width: 24.5%;
+            height: 32px;
+        }
+        form {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 18px;
+        }
+        p     { display: table-row;  }        
+        #cell { display: table-cell; padding-right: 10px;}
+        
+        </style>
+    </head>
+    <body>
+        <div>
+            <table id="stocktable">
+                <script>
+                    function update() { 
+                            
+                    }           
+                </script>
+                <tr>
+                    <td>Stock</t>
+                    <td>Quantity</td>
+                    <td>Price</td>
+                    <td>Gain/Loss</td>
+                </tr>
+
+                
+
+                
+            </table>
+        </div>
+        <br>
+        <div>
+            <form>
+                <p>
+                <label for="stocksym" id="cell">Stock Symbol</label>
+                <input type="text" id="cell" name="stocksym"><br>
+                </p>
+                <p>
+                <label for="quantityp" id="cell">Quantity</label>
+                <input type="text" id="cell" name="quantityp"><br>
+                </p>
+                <p>
+                <label for="pricep" id="cell">Price</label>
+                <input type="text" id="cell" name="pricep"><br>
+                </p>
+                <br>
+                <input type="submit" onclick="reset()" id="submit" value="Reset">
+                <input type="submit" onclick="update()" id="submit" value="Update">
+                
+            </form>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,36 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="/Front-End/functions.js"></script>        
+        <link rel="stylesheet" href="/Front-End/styles.css">        
+            
+    </head>
+    <body onLoad="buildHtmlTable('#excelDataTable')">
+    <div>
+        <table id="excelDataTable" border="1">
+        </table>
+    </div>
+    <br>
+    <div>
+        <form id="stock-add">
+            <p>
+            <label for="stocksym" id="cell">Stock Symbol</label>
+            <input type="text" id="cell" name="stocksym"><br>
+            </p>
+            <p>
+            <label for="quantityp" id="cell">Quantity</label>
+            <input type="number" id="cell" name="quantityp"><br>
+            </p>
+            <p>
+            <label for="pricep" id="cell">Price</label>
+            <input type="number" id="cell" name="pricep"><br>
+            </p>
+            <br>
+            <input type="button" onclick="reset()" id="submit" value="Reset">
+            <input type="button" onclick="update()" id="submit" value="Update">
+            
+        </form>
+    </div>
+    </body>
+
+</html>

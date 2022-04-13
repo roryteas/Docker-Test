@@ -1,0 +1,19 @@
+table {            
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 18px;
+    border-collapse: collapse;
+    width: 99%;           
+}
+td , th {
+    border: 1px solid #000000;
+    text-align: left;
+    padding: 8px;
+    width: 24.5%;
+    height: 32px;
+}
+form {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 18px;
+}
+p     { display: table-row;  }        
+#cell { display: table-cell; padding-right: 10px;}

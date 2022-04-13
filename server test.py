@@ -2,11 +2,12 @@ import base64
 from socket import *
 import _thread
 import os
+import json
 
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
-serverPort = int(os.environ.get('PORT', 17995))
+serverPort = 8080
 serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
 
@@ -32,11 +33,8 @@ def getFile(filename):
 
 		# open and read the file contents. This becomes the body of the HTTP response
 		f = open(filename, "rb")
-		
-		print(f)
-
 		body = f.read()
-		print(body)
+		
 
 		header = ("HTTP/1.1 200 OK\r\n\r\n").encode()
 
@@ -62,7 +60,17 @@ def portfolio(message):
 
 
 	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
-	f = open("zippy.html","rb")
+	f = open("Front-End/zippy.html","rb")
+	body = f.read()
+
+
+	return header, body
+
+def jason(message):
+
+
+	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+	f = open("portfolio.json","rb")
 	body = f.read()
 
 
@@ -82,17 +90,41 @@ def default(message):
 
 	return header, body
 
+def getPortfolio():
+
+	with open('portfolio.json') as f:
+		jase = json.load(f)
+	portfolio = jase['portfolio']
+	return portfolio
+
+def stockInPortfolio(portfolio_list, new_stock):
+	stock_in_portfolio = -1
+	for i, current_stock in enumerate(portfolio_list):
+		if current_stock["Stock"] == new_stock["Stock"]:
+			stock_in_portfolio = i	
+	return stock_in_portfolio
+
+def getAveragePrice(current_stock, new_stock):
+	
+	current_stock_paid = int(current_stock["Price"]) * int(current_stock["Quantity"])
+	print(current_stock_paid)
+	new_stock_paid = int(new_stock["Price"]) * int(new_stock["Quantity"])
+	print(new_stock_paid)
+	total_stock_quantity = int(current_stock["Quantity"]) + int(new_stock["Quantity"])
+	total_stock_paid = current_stock_paid + new_stock_paid
+	average_stock_price = total_stock_paid/total_stock_quantity
+	return average_stock_price
+
 
 #We process client request here. The requested resource in the URL is mapped to a service function which generates the HTTP reponse 
 #that is eventually returned to the client. 
 def process(connectionSocket) :	
 	# Receives the request message from the client
-	message = connectionSocket.recv(1024).decode()
-
+	message = connectionSocket.recv(1024).decode()	
 	user = "22011882"
 	password = "22011882"
 	credentials = "b'" +user + ":" + password + "'"
-	print(credentials)
+	
 	
 	temp = [i.strip() for i in message.splitlines()]
 	auth_present = False
@@ -110,31 +142,62 @@ def process(connectionSocket) :
 				auth_present = True
 
 
+	http_method = message.split()[0]
+	
+	if http_method == "GET":
 
 
-	if len(message) > 1:
+		if len(message) > 1:
 
 
+			# Extract the path of the requested object from the message
+			# Because the extracted path of the HTTP request includes
+			# a character '/', we read the path from the second character
+			resource = message.split()[1][1:]
+			
+			#map requested resource (contained in the URL) to specific function which generates HTTP response
+			if not auth_present:
+				print("ITS NAHT")
+				responseHeader, responseBody = noAuth(message)
 
-		# Extract the path of the requested object from the message
-		# Because the extracted path of the HTTP request includes
-		# a character '/', we read the path from the second character
-		resource = message.split()[1][1:]
-		print(resource)
-		#map requested resource (contained in the URL) to specific function which generates HTTP response
-		if not auth_present:
-			print("ITS NAHT")
-			responseHeader, responseBody = noAuth(message)
+			elif resource == "":
+				responseHeader, responseBody = default(message)
+			elif resource == "welcome":
+				responseHeader,responseBody = welcome(message)
+			elif resource == "portfolio":
+				responseHeader,responseBody = portfolio(message)
+			elif resource == "portfolio.json":
+				responseHeader,responseBody = jason(message)
+			else:
+				responseHeader,responseBody = getFile(resource)
+	
+	if 	http_method == "POST":
 
-		elif resource == "":
-			responseHeader, responseBody = default(message)
-		elif resource == "welcome":
-			responseHeader,responseBody = welcome(message)
-		elif resource == "portfolio":
-			responseHeader,responseBody = portfolio(message)
+		new_stock = json.loads(message.split()[-1])		
+		portfolio_list = getPortfolio()
+
+		stock_index = stockInPortfolio(portfolio_list, new_stock)
+
+		if stock_index > -1:
+			portfolio_list[stock_index]["Price"] = getAveragePrice(portfolio_list[stock_index], new_stock)
+			portfolio_list[stock_index]["Quantity"] = int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"])			
+			
 		else:
-			responseHeader,responseBody = getFile(resource)
+			portfolio_list.append(new_stock)
 
+		with open('portfolio.json') as f:
+			jase = json.load(f)	
+		
+		
+		jase['portfolio'] = portfolio_list
+
+		with open('portfolio.json', 'w') as outfile:
+			outfile.write(json.dumps(jase))
+
+
+		responseHeader,responseBody = portfolio(message)
+		
+	
 	connectionSocket.send(responseHeader)
 	connectionSocket.send(responseBody)
 	connectionSocket.close()
@@ -156,7 +219,6 @@ while True:
 	connectionSocket.settimeout(60)
 	# start new thread to handle incoming request
 	_thread.start_new_thread(process,(connectionSocket,))
-
 
 
 
