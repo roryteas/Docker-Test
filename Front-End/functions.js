@@ -8,16 +8,18 @@ async function getJason(){
 
 async function getTickers(){
   return fetch("Tickers")
+  .then(response => response.json())
 }
 
 async function load(){
-  buildHtmlTable('#stockTable')  
-  return tickerList
+  buildHtmlTable('#stockTable')
+  tickerDropdown()  
+  
 }
 
 async function tickersHelper(){
-  var tickerList = getTickers()
-  return tickerList()
+  var tickerList = await getTickers()
+  return tickerList
 }
 
 async function setList(){
@@ -86,5 +88,27 @@ async function setList(){
   var Table = document.getElementById("stockTable");
   Table.innerHTML = "";
   await buildHtmlTable('#stockTable')
+ }
+async function fillDataList() {
+  var optionList = await tickersHelper();
+  console.log(optionList[0])
+  var container = document.getElementById('stocksym'),
+  i = 0,
+  len = optionList.length,
+  dl = document.createElement('datalist');
 
+  dl.id = 'tickerList';
+  for (; i < len; i += 1) {
+      var option = document.createElement('option');
+      option.value = optionList[i];
+      dl.appendChild(option);
   }
+  console.log(dl)
+  container.appendChild(dl);
+}
+
+async function tickerDropdown(){
+  
+
+  fillDataList()
+}

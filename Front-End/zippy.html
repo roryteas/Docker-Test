@@ -5,7 +5,7 @@
         <link rel="stylesheet" href="/Front-End/styles.css">        
             
     </head>
-    <body onLoad="var tickerList = load()">
+    <body onLoad="load()">
     <div>
         <table id="stockTable" border="1">
         </table>
@@ -15,7 +15,7 @@
         <form id="stock-add">
             <p>
             <label for="stocksym" id="cell">Stock Symbol</label>
-            <input type="text" datalist="tickerList" id="cell" name="stocksym"><br>
+            <input type="text" list="tickerList" id="stocksym" name="stocksym"><br>
             </p>
             <p>
             <label for="quantityp" id="cell">Quantity</label>
@@ -28,7 +28,9 @@
             <br>
             <input type="button" onclick="reset()" id="submit" value="Reset">
             <input type="button" onclick="update()" id="submit" value="Update">
-            
+            <script>
+
+            </script>
         </form>
     </div>
     </body>
