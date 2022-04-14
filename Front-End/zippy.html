@@ -5,9 +5,9 @@
         <link rel="stylesheet" href="/Front-End/styles.css">        
             
     </head>
-    <body onLoad="buildHtmlTable('#excelDataTable')">
+    <body onLoad="var tickerList = load()">
     <div>
-        <table id="excelDataTable" border="1">
+        <table id="stockTable" border="1">
         </table>
     </div>
     <br>
@@ -15,7 +15,7 @@
         <form id="stock-add">
             <p>
             <label for="stocksym" id="cell">Stock Symbol</label>
-            <input type="text" id="cell" name="stocksym"><br>
+            <input type="text" datalist="tickerList" id="cell" name="stocksym"><br>
             </p>
             <p>
             <label for="quantityp" id="cell">Quantity</label>
