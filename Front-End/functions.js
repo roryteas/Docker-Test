@@ -6,7 +6,21 @@ async function getJason(){
              
 }
 
-async function setVar(){
+async function getTickers(){
+  return fetch("Tickers")
+}
+
+async function load(){
+  buildHtmlTable('#stockTable')  
+  return tickerList
+}
+
+async function tickersHelper(){
+  var tickerList = getTickers()
+  return tickerList()
+}
+
+async function setList(){
   var myList = await getJason();
   myList = myList.portfolio;
   console.log(myList)
@@ -19,7 +33,8 @@ async function setVar(){
   // Builds the HTML Table out of myList.
   async function buildHtmlTable(selector) {
 
-    var myList = await setVar();
+    
+    var myList = await setList();
     var columns = await addAllColumnHeaders(myList, selector);  
 
     
@@ -68,6 +83,8 @@ async function setVar(){
   stock["Price"] = (document.getElementById("stock-add").elements["pricep"].value);
   console.log(stock)
   var response = await fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})
-  location.reload()
+  var Table = document.getElementById("stockTable");
+  Table.innerHTML = "";
+  await buildHtmlTable('#stockTable')
 
   }

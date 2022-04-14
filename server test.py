@@ -3,7 +3,8 @@ from socket import *
 import _thread
 import os
 import json
-
+import pycurl
+from io import BytesIO	
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
@@ -12,6 +13,8 @@ serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
 
 serverSocket.listen(5)
+
+
 print('The server is running')	
 # Server should be up and running and listening to the incoming connections
 
@@ -56,6 +59,30 @@ def welcome(message):
 
 	return header, body
 
+
+def getTickerList():
+
+	token = 'pk_e9a6c505de5a44599b2560e6407fadbb'
+	response_buffer = BytesIO()
+	curl = pycurl.Curl()	#Set the curl options which specify the Google API server, the parameters to be passed to the API,
+	# and buffer to hold the response
+	curl.setopt(curl.SSL_VERIFYPEER, False)
+	curl.setopt(curl.URL, 'https://cloud.iexapis.com/stable/ref-data/symbols?token='+token)
+	
+	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
+
+	curl.perform()
+	curl.close()
+	body = response_buffer.getvalue()
+
+	json_body = json.loads(body)
+	cs_tlist = []
+	for security in json_body:
+		if security["type"] == "cs":
+			cs_tlist.append(security["symbol"])
+	return cs_tlist
+
+
 def portfolio(message):
 
 
@@ -81,6 +108,44 @@ def noAuth(message):
 	header = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic\r\n\r\n".encode()
 	print(header)
 	body = "<html><body>Sorry bucko</body></html>".encode()
+	return header, body
+
+def postPortfolio(message):
+	
+	new_stock = json.loads(message.split()[-1])		
+	portfolio_list = getPortfolio()
+
+	stock_index = stockInPortfolio(portfolio_list, new_stock)
+
+	if stock_index > -1:
+		portfolio_list[stock_index]["Price"] = getAveragePrice(portfolio_list[stock_index], new_stock)
+		portfolio_list[stock_index]["Quantity"] = int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"])			
+		
+	else:
+		portfolio_list.append(new_stock)
+
+	with open('portfolio.json') as f:
+		jase = json.load(f)	
+	
+	
+	jase['portfolio'] = portfolio_list
+
+	with open('portfolio.json', 'w') as outfile:
+		outfile.write(json.dumps(jase))
+
+	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+	body = "".encode()
+
+	return header, body
+
+def tickers():
+
+	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+
+	tickers = getTickerList()
+	body = json.dumps(tickers).encode()
+	
+	
 	return header, body
 
 #default service function
@@ -168,34 +233,24 @@ def process(connectionSocket) :
 				responseHeader,responseBody = portfolio(message)
 			elif resource == "portfolio.json":
 				responseHeader,responseBody = jason(message)
+			elif resource == "Tickers":
+				responseHeader,responseBody = tickers()
 			else:
 				responseHeader,responseBody = getFile(resource)
 	
 	if 	http_method == "POST":
+		if len(message) > 1:
 
-		new_stock = json.loads(message.split()[-1])		
-		portfolio_list = getPortfolio()
+			resource = message.split()[1][1:]
+			print(resource)
 
-		stock_index = stockInPortfolio(portfolio_list, new_stock)
-
-		if stock_index > -1:
-			portfolio_list[stock_index]["Price"] = getAveragePrice(portfolio_list[stock_index], new_stock)
-			portfolio_list[stock_index]["Quantity"] = int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"])			
-			
-		else:
-			portfolio_list.append(new_stock)
-
-		with open('portfolio.json') as f:
-			jase = json.load(f)	
-		
-		
-		jase['portfolio'] = portfolio_list
-
-		with open('portfolio.json', 'w') as outfile:
-			outfile.write(json.dumps(jase))
+			if not auth_present:
+				print("ITS NAHT")
+				responseHeader, responseBody = noAuth(message)
+			elif resource == "Portfolio":
+				responseHeader,responseBody = postPortfolio(message)
 
 
-		responseHeader,responseBody = portfolio(message)
 		
 	
 	connectionSocket.send(responseHeader)
