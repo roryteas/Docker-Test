@@ -13,9 +13,9 @@ from sqlalchemy import true
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
-serverPort = 8080
+#serverPort = 8080
 
-#serverPort = int(os.environ.get('PORT', 17995))
+serverPort = int(os.environ.get('PORT', 17995))
 
 serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
