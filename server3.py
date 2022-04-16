@@ -205,7 +205,7 @@ def postPortfolio(message):
 
 	sys.stdout.flush()
 	
-	
+	print(response[-1])
 	new_stock = json.loads(response[-1])	
 	
 	new_stock["Stock"] = new_stock["Stock"].upper()	
