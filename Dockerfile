@@ -2,13 +2,13 @@ FROM python:3.10
 
 ADD server3.py .
 
-ADD functions.js
+ADD functions.js .
 
-ADD portfolio.html
+ADD portfolio.html .
 
-ADD portfolio.json
+ADD portfolio.json .
 
-ADD styles.css
+ADD styles.css .
 
 
 
