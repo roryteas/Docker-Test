@@ -73,7 +73,7 @@ def getTickerList():
 	response_buffer = BytesIO()
 	curl = pycurl.Curl()	#Set the curl options which specify the Google API server, the parameters to be passed to the API,
 	# and buffer to hold the response
-	curl.setopt(pycurl.CONNECTTIMEOUT, 5)
+	curl.setopt(pycurl.CONNECTTIMEOUT, 60)
 	curl.setopt(curl.SSL_VERIFYPEER, False)
 	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/ref-data/symbols?token='+token)
 	
