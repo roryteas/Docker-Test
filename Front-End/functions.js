@@ -1,3 +1,5 @@
+
+//fetches portfolio JSON file
 var jasonInit = {method: 'GET'}
 async function getJason(){
     
@@ -6,46 +8,53 @@ async function getJason(){
              
 }
 
+//fetches tickers from server
 async function getTickers(){
   return fetch("Tickers")
   .then(response => response.json())
 }
 
+//wrapper for functions loading on pageload
 async function load(){
   buildHtmlTable('#stockTable')
-  tickerDropdown()  
+  fillDataList()  
   
 }
 
+//calls ticker fetch function and returns a list of tickers, for use in the dropdown
 async function tickersHelper(){
   var tickerList = await getTickers()
   return tickerList
 }
 
+//returns the portfolio of stocks 
 async function setList(){
   var myList = await getJason();
-  myList = myList.portfolio;
-  console.log(myList)
+  portfolioList = myList.portfolio; 
   
   
-  return myList
+  return portfolioList
 }
-
   
   // Builds the HTML Table out of myList.
   async function buildHtmlTable(selector) {
 
     
-    var myList = await setList();
-    var columns = await addAllColumnHeaders(myList, selector);  
+    var portfolioList = await setList();
+    var columns = await addAllColumnHeaders(portfolioList, selector);  
 
     
-    for (var i = 0; i < myList.length; i++) {
+    for (var i = 0; i < portfolioList.length; i++) {
       var row$ = $('<tr/>');
       
-      for (var colIndex = 0; colIndex < columns.length; colIndex++) {
-        var cellValue = myList[i][columns[colIndex]];
-
+      for (var colIndex = 0; colIndex < 4; colIndex++) {
+        if (colIndex < 3){
+          var cellValue = portfolioList[i][columns[colIndex]];
+        }
+        if (colIndex == 3){
+          // Get gain/loss
+          var cellValue = "Gainz"
+        }
         if (cellValue == null) cellValue = "";
         row$.append($('<td/>').html(cellValue));
       }
@@ -54,8 +63,7 @@ async function setList(){
   }
   
   // Adds a header row to the table and returns the set of columns.
-  // Need to do union of keys from all records as some records may not contain
-  // all records.
+   
   async function addAllColumnHeaders(myList, selector) {
     var columnSet = [];
     var headerTr$ = $('<tr/>');
@@ -76,19 +84,70 @@ async function setList(){
     return columnSet;
   }
 
- async function update() {
+//Takes error message passed from server and adds error text to Span object on the page
+function errorMessage(errorcode) {
+  var error = document.getElementById("error")
+  
+  
+      
+      // Changing content and color of content
+      if (errorcode == "Error - WRONGSTOCK"){
+        console.log("ABC")
+        error.textContent = "Please enter a valid stock symbol";
+        error.style.color = "red";
+      }
+
+      if (errorcode == "Error - EMPTYFIELD"){
+        console.log("ABC")
+        error.textContent = "You must fill in all fields";
+        error.style.color = "red";
+      }
+
+      if (errorcode == "Error - SHORT"){
+        console.log("CBA")
+        error.textContent = "Error - Short Selling not allowed";
+        error.style.color = "red";
+      }
+
+      if (errorcode == "Error - BADPRICE"){
+        console.log("CBA")
+        error.textContent = "Price must be above 0";
+        error.style.color = "red";
+      }
+      
+  
+}
+
+ //actions when update button is clicked
+ 
+ 
+async function update() {
 
   var stock = {"Stock":"", "Quantity":"", "Price":""}
-
+   //creates a stock object to send to server
   stock["Stock"] = (document.getElementById("stock-add").elements["stocksym"].value);
   stock["Quantity"] = (document.getElementById("stock-add").elements["quantityp"].value);
   stock["Price"] = (document.getElementById("stock-add").elements["pricep"].value);
-  console.log(stock)
-  var response = await fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})
-  var Table = document.getElementById("stockTable");
-  Table.innerHTML = "";
-  await buildHtmlTable('#stockTable')
- }
+  
+  //post new stock object to server
+  var resBody = await fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})
+    .then(response => response.text())
+  
+ 
+  //check for error text in the response
+  if (resBody != ""){
+    
+    errorMessage(resBody)
+  }
+  else 
+    var error = document.getElementById("error")
+    error.textContent = ""
+    var Table = document.getElementById("stockTable");
+    Table.innerHTML = "";
+    await buildHtmlTable('#stockTable')
+  }
+
+//fills datalist to populate the dropdown
 async function fillDataList() {
   var optionList = await tickersHelper();
   console.log(optionList[0])
@@ -107,8 +166,5 @@ async function fillDataList() {
   container.appendChild(dl);
 }
 
-async function tickerDropdown(){
-  
 
-  fillDataList()
-}
+
