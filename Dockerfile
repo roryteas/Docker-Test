@@ -12,7 +12,7 @@ ADD /Front-End/styles.css .
 
 
 
-RUN pip install pybase64 sockets thread6 pycurl 
+RUN pip install pybase64 sockets thread6 pycurl sqlalchemy
 
 CMD ["python", "./server3.py"]
 
