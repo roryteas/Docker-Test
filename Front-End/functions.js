@@ -121,10 +121,7 @@ function errorMessage(errorcode) {
  //actions when update button is clicked
  
 async function buildStock(){
-  var stock = {"Stock":"", "Quantity":"", "Price":""}
-  stock["Stock"] = (document.getElementById("stock-add").elements["stocksym"].value);
-  stock["Quantity"] = (document.getElementById("stock-add").elements["quantityp"].value);
-  stock["Price"] = (document.getElementById("stock-add").elements["pricep"].value);
+
 
   return stock
 }
@@ -133,7 +130,12 @@ async function update() {
 
   
    //creates a stock object to send to server
-  stock = await buildStock()
+ // stock = buildStock()
+
+  var stock = {"Stock":"", "Quantity":"", "Price":""}
+  stock["Stock"] = (document.getElementById("stock-add").elements["stocksym"].value);
+  stock["Quantity"] = (document.getElementById("stock-add").elements["quantityp"].value);
+  stock["Price"] = (document.getElementById("stock-add").elements["pricep"].value);
   
   //post new stock object to server
   var resBody = await fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})

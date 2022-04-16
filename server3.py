@@ -13,9 +13,9 @@ from sqlalchemy import true
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
-#serverPort = 8080
+serverPort = 8080
 
-serverPort = int(os.environ.get('PORT', 17995))
+#serverPort = int(os.environ.get('PORT', 17995))
 
 serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
@@ -202,11 +202,11 @@ def errorCode(validation_error):
 def postPortfolio(message):
 	
 	response = message.split()
-	print(message)
+
 	sys.stdout.flush()
-	indices = [i for i, s in enumerate(response) if '{"Stock' in s]
 	
-	new_stock = json.loads(message.split()[indices[0]])	
+	
+	new_stock = json.loads(response[-1])	
 	
 	new_stock["Stock"] = new_stock["Stock"].upper()	
 	valid = validation(new_stock)
@@ -304,7 +304,11 @@ def getAveragePrice(current_stock, new_stock):
 #that is eventually returned to the client. 
 def process(connectionSocket) :	
 	# Receives the request message from the client
-	message = connectionSocket.recv(10000).decode()	
+	message = connectionSocket.recv(4096).decode()
+
+	http_method = message.split()[0]
+
+
 	user = "22011882"
 	password = "22011882"
 	credentials = "b'" +user + ":" + password + "'"
@@ -326,7 +330,7 @@ def process(connectionSocket) :
 				auth_present = True
 
 
-	http_method = message.split()[0]
+	
 	
 	if http_method == "GET":
 
@@ -401,8 +405,7 @@ while True:
 		
 
 	
-	#Clients timeout after 60 seconds of inactivity and must reconnect.
-	connectionSocket.settimeout(60)
+
 	# start new thread to handle incoming request
 	_thread.start_new_thread(process,(connectionSocket,))
 	
