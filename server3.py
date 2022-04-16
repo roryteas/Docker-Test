@@ -204,7 +204,7 @@ def postPortfolio(message):
 	response = message.split()
 
 	sys.stdout.flush()
-	
+	print(response)
 	print(response[-1])
 	new_stock = json.loads(response[-1])	
 	
