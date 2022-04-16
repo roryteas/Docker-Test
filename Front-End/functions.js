@@ -138,7 +138,7 @@ async function update() {
   stock["Price"] = (document.getElementById("stock-add").elements["pricep"].value);
   
   //post new stock object to server
-  var resBody = await fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})
+  var resBody = fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})
     .then(response => response.text())
   
  
