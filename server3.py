@@ -304,7 +304,7 @@ def getAveragePrice(current_stock, new_stock):
 #that is eventually returned to the client. 
 def process(connectionSocket) :	
 	# Receives the request message from the client
-	message = connectionSocket.recv(1024).decode()	
+	message = connectionSocket.recv(2048).decode()	
 	user = "22011882"
 	password = "22011882"
 	credentials = "b'" +user + ":" + password + "'"
