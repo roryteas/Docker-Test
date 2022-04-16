@@ -8,13 +8,13 @@ implement gain/loss
 
 do stock research page
 
-make things into functions
+make things into functions - better
 
-get working on docker/heroku again
+get working on docker/heroku again - yup
 
-cull unnecessary files
+cull unnecessary files - archived
 
-comment functions and code
+comment functions and code - done js
 
 create readme file
 

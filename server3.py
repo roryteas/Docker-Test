@@ -12,7 +12,10 @@ from sqlalchemy import true
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
+#serverPort = 8080
+
 serverPort = int(os.environ.get('PORT', 17995))
+
 serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
 
@@ -202,6 +205,7 @@ def errorCode(validation_error):
 def postPortfolio(message):
 	
 	new_stock = json.loads(message.split()[-1])	
+	print(new_stock)
 	new_stock["Stock"] = new_stock["Stock"].upper()	
 	valid = validation(new_stock)
 
