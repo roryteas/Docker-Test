@@ -12,20 +12,16 @@ from sqlalchemy import true
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
-#serverPort = 8080
+serverPort = 8080
 
-serverPort = int(os.environ.get('PORT', 17995))
+#serverPort = int(os.environ.get('PORT', 17995))
 
 serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
 
 serverSocket.listen(5)
 print('The server is running')	
-# Server should be up and running and listening to the incoming connections
 
-
-
-print('The server is running')	
 # Server should be up and running and listening to the incoming connections
 
 #Extract the given header value from the HTTP request message
@@ -204,8 +200,11 @@ def errorCode(validation_error):
 
 def postPortfolio(message):
 	
-	new_stock = json.loads(message.split()[-1])	
-	print(new_stock)
+	response = message.split()
+	indices = [i for i, s in enumerate(response) if '{"Stock' in s]
+	
+	new_stock = json.loads(message.split()[indices[0]])	
+	
 	new_stock["Stock"] = new_stock["Stock"].upper()	
 	valid = validation(new_stock)
 
