@@ -2,7 +2,15 @@ FROM python:3.10
 
 ADD server3.py .
 
-ADD bippy.html .
+ADD functions.js
+
+ADD portfolio.html
+
+ADD portfolio.json
+
+ADD styles.css
+
+
 
 RUN pip install pybase64 sockets thread6 pycurl time BytesIO sqlalchemy
 

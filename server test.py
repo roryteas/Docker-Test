@@ -96,7 +96,7 @@ def portfolio(message):
 
 
 	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
-	f = open("Front-End/zippy.html","rb")
+	f = open("Front-End/portfolio.html","rb")
 	body = f.read()
 
 
