@@ -1,4 +1,5 @@
 import base64
+import sys
 from socket import *
 import _thread
 import os
@@ -201,6 +202,8 @@ def errorCode(validation_error):
 def postPortfolio(message):
 	
 	response = message.split()
+	print(message)
+	sys.stdout.flush()
 	indices = [i for i, s in enumerate(response) if '{"Stock' in s]
 	
 	new_stock = json.loads(message.split()[indices[0]])	
