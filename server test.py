@@ -3,8 +3,11 @@ from socket import *
 import _thread
 import os
 import json
+from tabnanny import check
 import pycurl
-from io import BytesIO	
+import time
+from io import BytesIO
+from sqlalchemy import true	
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
@@ -13,6 +16,7 @@ serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
 
 serverSocket.listen(5)
+
 
 
 print('The server is running')	
@@ -61,25 +65,30 @@ def welcome(message):
 
 
 def getTickerList():
-
-	token = 'pk_e9a6c505de5a44599b2560e6407fadbb'
+	
+	token = 'Tpk_71a0b285c4124025a57ecccd7c43a511'
 	response_buffer = BytesIO()
 	curl = pycurl.Curl()	#Set the curl options which specify the Google API server, the parameters to be passed to the API,
 	# and buffer to hold the response
+	curl.setopt(pycurl.CONNECTTIMEOUT, 5)
 	curl.setopt(curl.SSL_VERIFYPEER, False)
-	curl.setopt(curl.URL, 'https://cloud.iexapis.com/stable/ref-data/symbols?token='+token)
+	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/ref-data/symbols?token='+token)
 	
 	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
 
 	curl.perform()
 	curl.close()
+
 	body = response_buffer.getvalue()
 
 	json_body = json.loads(body)
+	print(json_body[0:1])
 	cs_tlist = []
 	for security in json_body:
 		if security["type"] == "cs":
 			cs_tlist.append(security["symbol"])
+
+
 	return cs_tlist
 
 
@@ -106,35 +115,136 @@ def jason(message):
 def noAuth(message):
 
 	header = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic\r\n\r\n".encode()
-	print(header)
+	
 	body = "<html><body>Sorry bucko</body></html>".encode()
+
 	return header, body
+
+def checkRealTicker(new_stock):
+
+	tickerList = cst_list
+	
+	isRealTicker = new_stock["Stock"] in tickerList
+
+	return isRealTicker
+
+def emptyValidation(new_stock):
+	test = 0
+	empty_field = False
+	if new_stock["Stock"] == "":
+		test +=1
+	if new_stock["Quantity"] == "":
+		test +=1
+	if new_stock["Quantity"] == "":
+		test +=1
+
+	if test > 0:
+		empty_field = True
+	
+	return empty_field
+
+def priceValidation(new_stock):
+
+	priceValid = True
+	if int(new_stock["Price"]) <= 0:
+		priceValid = False
+	
+	return priceValid
+		
+def shortValidation(new_stock):
+
+	is_long  = True 
+			
+	portfolio_list = getPortfolio()
+	stock_index = stockInPortfolio(portfolio_list, new_stock)
+	
+	if stock_index >= 0:
+		if int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"]) < 0:
+			is_long = False
+	return is_long
+
+
+def validation(new_stock):
+
+	validation_error = 0
+
+	if emptyValidation(new_stock):
+		validation_error = 1
+	elif not checkRealTicker(new_stock):
+		validation_error = 2
+	elif not priceValidation(new_stock):
+		validation_error = 3
+	elif not shortValidation(new_stock):
+		validation_error = 4
+
+	return validation_error
+
+def errorCode(validation_error):
+	error_text = "Error Unknown"
+	
+	if validation_error == 1:
+		error_text = "EMPTYFIELD"
+
+	elif validation_error == 2:
+		error_text = "WRONGSTOCK"
+
+	elif validation_error == 3:
+		error_text = "BADPRICE"
+
+	elif validation_error == 4:
+		error_text = "SHORT"
+
+	return error_text
 
 def postPortfolio(message):
 	
-	new_stock = json.loads(message.split()[-1])		
-	portfolio_list = getPortfolio()
+	new_stock = json.loads(message.split()[-1])	
+	new_stock["Stock"] = new_stock["Stock"].upper()	
+	valid = validation(new_stock)
 
-	stock_index = stockInPortfolio(portfolio_list, new_stock)
 
-	if stock_index > -1:
-		portfolio_list[stock_index]["Price"] = getAveragePrice(portfolio_list[stock_index], new_stock)
-		portfolio_list[stock_index]["Quantity"] = int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"])			
-		
+	if valid == 0:
+				
+		portfolio_list = getPortfolio()
+		stock_index = stockInPortfolio(portfolio_list, new_stock)
+
+		if stock_index > -1:
+			
+			if (int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"]) > 0):
+				portfolio_list[stock_index]["Price"] = getAveragePrice(portfolio_list[stock_index], new_stock)
+				portfolio_list[stock_index]["Quantity"] = int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"])			
+				header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+				body = "".encode()
+			elif (int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"]) == 0):
+				del portfolio_list[stock_index]
+				header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+				body = "".encode()
+
+		else:
+			
+			if int(new_stock["Quantity"]) > 0:
+				portfolio_list.append(new_stock)
+				header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+				body = "".encode()
+
+
+		with open('portfolio.json') as f:
+			jase = json.load(f)	
+			
+			
+		jase['portfolio'] = portfolio_list
+
+		with open('portfolio.json', 'w') as outfile:
+			outfile.write(json.dumps(jase))
+	
+
 	else:
-		portfolio_list.append(new_stock)
 
-	with open('portfolio.json') as f:
-		jase = json.load(f)	
-	
-	
-	jase['portfolio'] = portfolio_list
-
-	with open('portfolio.json', 'w') as outfile:
-		outfile.write(json.dumps(jase))
-
-	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
-	body = "".encode()
+			error_code = errorCode(valid)
+		
+			error_body =( "Error - "+error_code)
+			body = error_body.encode()
+			header = "HTTP/1.1 449 RETRY WITH\r\n\r\n".encode()
 
 	return header, body
 
@@ -142,7 +252,7 @@ def tickers():
 
 	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
 
-	tickers = getTickerList()
+	tickers = cst_list
 	body = json.dumps(tickers).encode()
 	
 	
@@ -172,9 +282,9 @@ def stockInPortfolio(portfolio_list, new_stock):
 def getAveragePrice(current_stock, new_stock):
 	
 	current_stock_paid = int(current_stock["Price"]) * int(current_stock["Quantity"])
-	print(current_stock_paid)
+	
 	new_stock_paid = int(new_stock["Price"]) * int(new_stock["Quantity"])
-	print(new_stock_paid)
+	
 	total_stock_quantity = int(current_stock["Quantity"]) + int(new_stock["Quantity"])
 	total_stock_paid = current_stock_paid + new_stock_paid
 	average_stock_price = total_stock_paid/total_stock_quantity
@@ -222,7 +332,7 @@ def process(connectionSocket) :
 			
 			#map requested resource (contained in the URL) to specific function which generates HTTP response
 			if not auth_present:
-				print("ITS NAHT")
+				
 				responseHeader, responseBody = noAuth(message)
 
 			elif resource == "":
@@ -242,10 +352,9 @@ def process(connectionSocket) :
 		if len(message) > 1:
 
 			resource = message.split()[1][1:]
-			print(resource)
+			
 
-			if not auth_present:
-				print("ITS NAHT")
+			if not auth_present:				
 				responseHeader, responseBody = noAuth(message)
 			elif resource == "Portfolio":
 				responseHeader,responseBody = postPortfolio(message)
@@ -266,15 +375,28 @@ def process(connectionSocket) :
 
 
 #Main web server loop. It simply accepts TCP connections, and get the request processed in seperate threads.
+#have initia
+
+start = time.time()
+cst_list = getTickerList()
 while True:
+	
 	
 	# Set up a new connection from the client
 	connectionSocket, addr = serverSocket.accept()
+
+	current_time = time.time()
+	if ((current_time - start) > 900):
+		start = time.time()
+		cst_list = getTickerList()
+		updatePortfolioPrices()
+
+	
 	#Clients timeout after 60 seconds of inactivity and must reconnect.
 	connectionSocket.settimeout(60)
 	# start new thread to handle incoming request
 	_thread.start_new_thread(process,(connectionSocket,))
-
-
+	
+	
 
 
