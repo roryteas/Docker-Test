@@ -6,7 +6,7 @@ ADD /Front-End/functions.js .
 
 ADD /Front-End/portfolio.html .
 
-ADD /Front-End/portfolio.json .
+ADD portfolio.json .
 
 ADD /Front-End/styles.css .
 
