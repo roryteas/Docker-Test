@@ -133,10 +133,10 @@ async function update() {
 
   
    //creates a stock object to send to server
-  stock = await buildStock()
+  stock =  JSON.stringify( buildStock())
   
   //post new stock object to server
-  var resBody = await fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})
+  var resBody = await fetch("Portfolio",{method :'POST', body: stock})
     .then(response => response.text())
   
  
