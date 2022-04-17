@@ -3,13 +3,28 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
         <script src="/Front-End/functions.js"></script>        
         <link rel="stylesheet" href="/Front-End/styles.css">        
-            
+
+
     </head>
-    <body>
+
+    <body onLoad ="fillDataList()">
         <form id="researchButton">
-            <p>
+            <form id="stock-add">
             <label for="stocksym" id="cell">Stock Symbol</label>
             <input type="text" list="tickerList" id="stocksym" name="stocksym"><br>
+            <input type="button" onclick="getData()" id="submit" value="Get Data">
+            </form>
+            <p>
+                <div>Symbol:</div>
+                <div>Company Name:</div>
+                <div>PE ratio:</div>
+                <div>Market Capitalization:</div>
+                <div>52 week high:</div>
+                <div>52 week low:</div>
             </p>
+            <br>
+            <div id="chartContainer" style="height: 370px; width: 100%;"></div>
+            
+            <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
         </form>
     </body>

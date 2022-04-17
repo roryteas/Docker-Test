@@ -36,6 +36,7 @@ async function setList(){
   return portfolioList
 }
   
+  
   // Builds the HTML Table out of myList.
   async function buildHtmlTable(selector) {
 
@@ -48,20 +49,35 @@ async function setList(){
       var row$ = $('<tr/>');
       
       for (var colIndex = 0; colIndex < 4; colIndex++) {
-        if (colIndex < 3){
+        if (colIndex < 1){
           var cellValue = portfolioList[i][columns[colIndex]];
+          
         }
-        if (colIndex == 3){
-          // Get gain/loss
-          var cellValue = "Gainz"
+        else if (colIndex <2) {
+          
+          var num = parseFloat(portfolioList[i][columns[colIndex]]).toFixed(2);
+          var cellValue = num
+          
         }
+        else if (colIndex <3) {
+          
+          var num = parseFloat(portfolioList[i][columns[colIndex]]).toFixed(2);
+          var cellValue = "$".concat(String(num));
+          
+        }
+        else if (colIndex <4) {
+          
+          var num = parseFloat(portfolioList[i][columns[colIndex]]).toFixed(2);
+          var cellValue = String(num).concat("%");
+          
+        }
+
         if (cellValue == null) cellValue = "";
         row$.append($('<td/>').html(cellValue));
       }
       $(selector).append(row$);
     }
-  }
-  
+}
   // Adds a header row to the table and returns the set of columns.
    
   async function addAllColumnHeaders(myList, selector) {
@@ -77,8 +93,7 @@ async function setList(){
         }
       }
     }
-    columnSet.push("Gain/Loss");
-    headerTr$.append($('<th/>').html("Gain/Loss"));
+
     $(selector).append(headerTr$);
   
     return columnSet;
@@ -136,9 +151,9 @@ async function update() {
   stock["Stock"] = (document.getElementById("stock-add").elements["stocksym"].value);
   stock["Quantity"] = (document.getElementById("stock-add").elements["quantityp"].value);
   stock["Price"] = (document.getElementById("stock-add").elements["pricep"].value);
-  stock = JSON.stringify(stock)
+  
   //post new stock object to server
-  var resBody = fetch("Portfolio",{method :'POST', body: stock})
+  var resBody = await fetch("Portfolio",{method :'POST', body: JSON.stringify(stock)})
     .then(response => response.text())
   
  
@@ -148,12 +163,78 @@ async function update() {
     errorMessage(resBody)
   }
   else 
-    var error = document.getElementById("error")
-    error.textContent = ""
+    var error = document.getElementById("error");
+    error.textContent = "";
     var Table = document.getElementById("stockTable");
     Table.innerHTML = "";
     await buildHtmlTable('#stockTable')
   }
+
+async function getData() {
+
+
+  //creates a stock object to send to server
+// stock = buildStock()
+  console.log("peeeeeeee")
+  console.log(document.getElementById('stocksym').value);
+  var stock = document.getElementById("stocksym").value;
+
+  
+  //post new stock object to server
+  var resBody = await fetch("GetStats",{method :'POST', body: JSON.stringify(stock)})
+    .then(response => response.json())
+  
+
+  //check for error text in the response
+  
+  await chart(resBody)
+}
+  
+
+async function chart(resBody) {
+
+  var limit = resBody["stockChart"].length;   
+  console.log(resBody)
+  var data = [];
+  var dataSeries = { type: "line" , xvaluetype : "dateTime"};
+  var dataPoints = [];
+  for (var i = 0; i < limit; i += 1) {
+    var myDate = resBody["stockChart"][i]['date'];
+    newDate = new Date(Date.parse(myDate))
+    dataPoints.push({
+      x: newDate,
+      y: resBody["stockChart"][i]['close']
+    })
+  console.log(dataPoints)
+
+    
+  }
+  dataSeries.dataPoints = dataPoints;
+  data.push(dataSeries);
+
+  //Better to construct options first and then pass it as a parameter
+  var options = {
+      zoomEnabled: true,
+      animationEnabled: true,
+      title: {
+          text: "Try Zooming - Panning"
+      },
+      axisY: {
+          lineThickness: 1
+      },
+      axisX: {
+        valueFormatString: "YYYY"
+      },
+      data: data  // random data
+  };
+
+  var chart = new CanvasJS.Chart("chartContainer", options);
+  var startTime = new Date();
+  chart.render();
+  var endTime = new Date();
+
+
+}
 
 //fills datalist to populate the dropdown
 async function fillDataList() {

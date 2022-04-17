@@ -1,4 +1,5 @@
 import base64
+from pickletools import decimalnl_long
 import sys
 from socket import *
 import _thread
@@ -13,9 +14,10 @@ from sqlalchemy import true
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
-#serverPort = 8080
+serverPort = 8080
 
-serverPort = int(os.environ.get('PORT', 17995))
+token = 'Tpk_71a0b285c4124025a57ecccd7c43a511'
+#serverPort = int(os.environ.get('PORT', 17995))
 
 serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
@@ -69,7 +71,7 @@ def welcome(message):
 
 def getTickerList():
 	
-	token = 'Tpk_71a0b285c4124025a57ecccd7c43a511'
+	
 	response_buffer = BytesIO()
 	curl = pycurl.Curl()	#Set the curl options which specify the Google API server, the parameters to be passed to the API,
 	# and buffer to hold the response
@@ -84,8 +86,7 @@ def getTickerList():
 
 	body = response_buffer.getvalue()
 
-	json_body = json.loads(body)
-	print(json_body[0:1])
+	json_body = json.loads(body)	
 	cs_tlist = []
 	for security in json_body:
 		if security["type"] == "cs":
@@ -105,13 +106,43 @@ def portfolio(message):
 
 	return header, body
 
+def research(message):
+
+
+	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+	f = open("Front-End/research.html","rb")
+	body = f.read()
+
+
+	return header, body
+
+def gainloss(body):
+
+	stockList = []
+	for stock in body["portfolio"]:
+		stockList.append(stock["Stock"])
+	priceList = getStockQuotes(stockList)
+	for i, stock in enumerate(body["portfolio"]):
+		quote = priceList[i]
+		gain_Loss = (int(quote) - int(body["portfolio"][i]["Price"]))
+		print(gain_Loss)
+		decimal_Gain_Loss = gain_Loss / int(body["portfolio"][i]["Price"])
+		print(decimal_Gain_Loss)
+		perent_Gain_Loss = decimal_Gain_Loss * 100
+
+		body["portfolio"][i]["Gain/Loss"] = perent_Gain_Loss
+	return body
+
 def jason(message):
 
 
 	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
-	f = open("portfolio.json","rb")
-	body = f.read()
-
+	f = open("portfolio.json")	
+	body = json.load(f)
+	body = gainloss(body)
+	body = json.dumps(body)
+	body = body.encode()
+	print(body)
 
 	return header, body
 
@@ -198,16 +229,111 @@ def errorCode(validation_error):
 		error_text = "SHORT"
 
 	return error_text
+def getStockQuote(stock):
+
+	response_buffer = BytesIO()
+	curl = pycurl.Curl()
+	curl.setopt(curl.SSL_VERIFYPEER, False)
+	
+	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/'+ stock +'/quote?token='+token)
+	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
+	curl.perform()
+	curl.close()
+
+	
+	body = json.loads(response_buffer.getvalue())
+	quote = body["latestPrice"]
+	
+	return quote
+
+def getStockQuotes(stockList):
+
+	response_buffer = BytesIO()
+	curl = pycurl.Curl()
+	curl.setopt(curl.SSL_VERIFYPEER, False)
+	stockstr = ''
+	for stock in stockList:
+		stockstr+=stock
+		stockstr+=","
+	stockstr = stockstr[:-1]
+	print(stockstr)
+	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/market/batch?types=price&symbols='+ stockstr +'&token='+token)
+	
+	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
+	curl.perform()
+	curl.close()
+	print(response_buffer)
+	
+	priceList = []
+
+	body = json.loads(response_buffer.getvalue())
+	for stock in stockList:
+		priceList.append(body[stock]["price"])
+	
+	
+	return priceList
+	
+def postStockQuote(message):
+	
+	response = message.split()
+	
+
+	stock = response[-1].strip('"')
+	
+
+	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+	body = str(getStockQuote(stock)).encode()
+	
+	return header, body
+
+def getStockStats(stock):
+
+	print(stock)
+	response_buffer = BytesIO()
+	curl = pycurl.Curl()
+	curl.setopt(curl.SSL_VERIFYPEER, False)
+	
+	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/'+ stock +'/chart/5y?&chartCloseOnly=true&token='+token)
+	print('https://sandbox.iexapis.com/stable/stock/'+ stock +'/chart/5y?types=close&chartCloseOnly=true&token='+token)
+	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
+	curl.perform()
+	curl.close()
+	print(response_buffer.getvalue())
+	stockChart = json.loads(response_buffer.getvalue())
+
+
+	response_buffer = BytesIO()
+	curl = pycurl.Curl()
+	curl.setopt(curl.SSL_VERIFYPEER, False)
+	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/'+ stock +'/stats?token='+token)
+	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
+	curl.perform()
+	curl.close()
+	print(response_buffer)
+	stockStats = json.loads(response_buffer.getvalue())	
+	stockData = {}
+
+	stockData["stockChart"] =stockChart
+
+	stockData["stockStats"] = stockStats
+	print(stockData)
+	return stockData
+
+def postGetStats(message):
+
+	response = message.split()
+	stock = response[-1].strip('"')
+
+	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
+	body = json.dumps(getStockStats(stock)).encode()
+	return header, body
 
 def postPortfolio(message):
 	
-	response = message.split()
-
-	sys.stdout.flush()
+	response = message.split()	
 	print(response)
 	print(response[-1])
 	new_stock = json.loads(response[-1])	
-	
 	new_stock["Stock"] = new_stock["Stock"].upper()	
 	valid = validation(new_stock)
 
@@ -354,6 +480,8 @@ def process(connectionSocket) :
 				responseHeader,responseBody = welcome(message)
 			elif resource == "portfolio":
 				responseHeader,responseBody = portfolio(message)
+			elif resource == "research":
+				responseHeader,responseBody = research(message)	
 			elif resource == "portfolio.json":
 				responseHeader,responseBody = jason(message)
 			elif resource == "Tickers":
@@ -365,12 +493,16 @@ def process(connectionSocket) :
 		if len(message) > 1:
 
 			resource = message.split()[1][1:]
-			
+			print(resource)
 
 			if not auth_present:				
 				responseHeader, responseBody = noAuth(message)
 			elif resource == "Portfolio":
 				responseHeader,responseBody = postPortfolio(message)
+			elif resource == "StockQuote":
+				responseHeader,responseBody = postStockQuote(message)
+			elif resource == "GetStats":
+				responseHeader,responseBody = postGetStats(message)
 
 
 		
