@@ -14,10 +14,10 @@ from sqlalchemy import true
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
 
-serverPort = 8080
+#serverPort = 8080
 
 token = 'Tpk_71a0b285c4124025a57ecccd7c43a511'
-#serverPort = int(os.environ.get('PORT', 17995))
+serverPort = int(os.environ.get('PORT', 17995))
 
 serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 serverSocket.bind(("0.0.0.0", serverPort))
@@ -125,9 +125,9 @@ def gainloss(body):
 	for i, stock in enumerate(body["portfolio"]):
 		quote = priceList[i]
 		gain_Loss = (int(quote) - int(body["portfolio"][i]["Price"]))
-		print(gain_Loss)
+		
 		decimal_Gain_Loss = gain_Loss / int(body["portfolio"][i]["Price"])
-		print(decimal_Gain_Loss)
+		
 		perent_Gain_Loss = decimal_Gain_Loss * 100
 
 		body["portfolio"][i]["Gain/Loss"] = perent_Gain_Loss
@@ -142,7 +142,7 @@ def jason(message):
 	body = gainloss(body)
 	body = json.dumps(body)
 	body = body.encode()
-	print(body)
+	
 
 	return header, body
 
@@ -256,13 +256,13 @@ def getStockQuotes(stockList):
 		stockstr+=stock
 		stockstr+=","
 	stockstr = stockstr[:-1]
-	print(stockstr)
+	
 	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/market/batch?types=price&symbols='+ stockstr +'&token='+token)
 	
 	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
 	curl.perform()
 	curl.close()
-	print(response_buffer)
+	
 	
 	priceList = []
 
@@ -288,17 +288,17 @@ def postStockQuote(message):
 
 def getStockStats(stock):
 
-	print(stock)
+	
 	response_buffer = BytesIO()
 	curl = pycurl.Curl()
 	curl.setopt(curl.SSL_VERIFYPEER, False)
 	
 	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/'+ stock +'/chart/5y?&chartCloseOnly=true&token='+token)
-	print('https://sandbox.iexapis.com/stable/stock/'+ stock +'/chart/5y?types=close&chartCloseOnly=true&token='+token)
+	
 	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
 	curl.perform()
 	curl.close()
-	print(response_buffer.getvalue())
+	
 	stockChart = json.loads(response_buffer.getvalue())
 
 
@@ -309,14 +309,14 @@ def getStockStats(stock):
 	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
 	curl.perform()
 	curl.close()
-	print(response_buffer)
+	
 	stockStats = json.loads(response_buffer.getvalue())	
 	stockData = {}
 
 	stockData["stockChart"] =stockChart
 
 	stockData["stockStats"] = stockStats
-	print(stockData)
+
 	return stockData
 
 def postGetStats(message):
@@ -331,8 +331,7 @@ def postGetStats(message):
 def postPortfolio(message):
 	
 	response = message.split()	
-	print(response)
-	print(response[-1])
+
 	new_stock = json.loads(response[-1])	
 	new_stock["Stock"] = new_stock["Stock"].upper()	
 	valid = validation(new_stock)
@@ -493,7 +492,7 @@ def process(connectionSocket) :
 		if len(message) > 1:
 
 			resource = message.split()[1][1:]
-			print(resource)
+			
 
 			if not auth_present:				
 				responseHeader, responseBody = noAuth(message)

@@ -135,11 +135,7 @@ function errorMessage(errorcode) {
 
  //actions when update button is clicked
  
-async function buildStock(){
 
-
-  return stock
-}
  
 async function update() {
 
@@ -175,8 +171,8 @@ async function getData() {
 
   //creates a stock object to send to server
 // stock = buildStock()
-  console.log("peeeeeeee")
-  console.log(document.getElementById('stocksym').value);
+  
+  
   var stock = document.getElementById("stocksym").value;
 
   
@@ -186,11 +182,31 @@ async function getData() {
   
 
   //check for error text in the response
-  
+  await stockStats(resBody)
   await chart(resBody)
 }
   
+async function stockStats(resBody){
+  var stats = resBody["stockStats"]
 
+  var symbol = document.getElementById("Symbol")
+  symbol.textContent = "Symbol: ".concat(document.getElementById("stocksym").value)
+
+  var companyName = document.getElementById("Company Name")
+  companyName.textContent = "Company Name: ".concat(stats["companyName"])
+
+  var peRatio = document.getElementById("PE Ratio")
+  peRatio.textContent = "PE Ratio: ".concat(stats["peRatio"])
+
+  var marketCap = document.getElementById("Market Cap")
+  marketCap.textContent = "Market Capitalisation: ".concat(stats["marketcap"])
+
+  var yearHigh = document.getElementById("52Weekhigh")
+  yearHigh.textContent = "52 Week High: ".concat(stats["week52high"])
+
+  var yearlow = document.getElementById("52Weeklow")
+  yearlow.textContent = "52 Week Low: ".concat(stats["week52low"])
+}
 async function chart(resBody) {
 
   var limit = resBody["stockChart"].length;   
@@ -216,14 +232,12 @@ async function chart(resBody) {
   var options = {
       zoomEnabled: true,
       animationEnabled: true,
-      title: {
-          text: "Try Zooming - Panning"
-      },
+
       axisY: {
           lineThickness: 1
       },
       axisX: {
-        valueFormatString: "YYYY"
+        valueFormatString: "MMM YYYY"
       },
       data: data  // random data
   };
