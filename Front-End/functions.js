@@ -144,6 +144,7 @@ async function update() {
  // stock = buildStock()
 
   var stock = {"Stock":"", "Quantity":"", "Price":""}
+  console.log()
   stock["Stock"] = (document.getElementById("stock-add").elements["stocksym"].value);
   stock["Quantity"] = (document.getElementById("stock-add").elements["quantityp"].value);
   stock["Price"] = (document.getElementById("stock-add").elements["pricep"].value);

@@ -6,6 +6,8 @@ ADD Front-End/functions.js Front-End/functions.js
 
 ADD Front-End/portfolio.html Front-End/portfolio.html 
 
+ADD Front-End/research.html Front-End/research.html 
+
 ADD portfolio.json .
 
 ADD Front-End/styles.css Front-End/styles.css 

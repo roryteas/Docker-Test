@@ -1,1 +1,1 @@
-{"portfolio": [{"Stock": "AAPL", "Quantity": 46, "Price": 245.0}, {"Stock": "TSLA", "Quantity": 46, "Price": 1960.5}]}
+{"portfolio": [{"Stock": "AAPL", "Quantity": 46, "Price": 245.0}, {"Stock": "TSLA", "Quantity": 46, "Price": 1960.5}, {"Stock": "AAC", "Quantity": "343", "Price": "36"}, {"Stock": "AAQC", "Quantity": 4343243500, "Price": 1.0005210796953936}, {"Stock": "A", "Quantity": 16.055500000000002, "Price": 22.494695275762197}]}

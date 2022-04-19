@@ -13,7 +13,6 @@ from sqlalchemy import true
 
 
 serverSocket = socket(AF_INET, SOCK_STREAM)
-
 #serverPort = 8080
 
 token = 'Tpk_71a0b285c4124025a57ecccd7c43a511'
@@ -58,17 +57,9 @@ def getFile(filename):
 
 	return header, body
 
-#service function to generate HTTP response with a simple welcome message
-def welcome(message):
 
 
-	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
-	body = ("<html><head></head><body><h1>Welcome to my homepage</h1></body></html>\r\n").encode()
-
-
-	return header, body
-
-
+#retrieves list of common stock from endpoint and returns list of stock symbols
 def getTickerList():
 	
 	
@@ -95,7 +86,7 @@ def getTickerList():
 
 	return cs_tlist
 
-
+#loads portfolio page
 def portfolio(message):
 
 
@@ -106,6 +97,7 @@ def portfolio(message):
 
 	return header, body
 
+#loads research page
 def research(message):
 
 
@@ -116,6 +108,7 @@ def research(message):
 
 	return header, body
 
+#takes 
 def gainloss(body):
 
 	stockList = []
@@ -124,16 +117,17 @@ def gainloss(body):
 	priceList = getStockQuotes(stockList)
 	for i, stock in enumerate(body["portfolio"]):
 		quote = priceList[i]
-		gain_Loss = (int(quote) - int(body["portfolio"][i]["Price"]))
+		gain_Loss = (float(quote) - float(body["portfolio"][i]["Price"]))
 		
-		decimal_Gain_Loss = gain_Loss / int(body["portfolio"][i]["Price"])
+		decimal_Gain_Loss = gain_Loss / float(body["portfolio"][i]["Price"])
 		
 		perent_Gain_Loss = decimal_Gain_Loss * 100
 
 		body["portfolio"][i]["Gain/Loss"] = perent_Gain_Loss
 	return body
 
-def jason(message):
+#sends portfolio data to client
+def jason():
 
 
 	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
@@ -145,12 +139,12 @@ def jason(message):
 	
 
 	return header, body
-
-def noAuth(message):
+#if authorisation fails sends HTML to client
+def noAuth():
 
 	header = "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic\r\n\r\n".encode()
 	
-	body = "<html><body>Sorry bucko</body></html>".encode()
+	body = "<html><body>Access Denied</body></html>".encode()
 
 	return header, body
 
@@ -180,7 +174,7 @@ def emptyValidation(new_stock):
 def priceValidation(new_stock):
 
 	priceValid = True
-	if int(new_stock["Price"]) <= 0:
+	if float(new_stock["Price"]) <= 0:
 		priceValid = False
 	
 	return priceValid
@@ -193,7 +187,7 @@ def shortValidation(new_stock):
 	stock_index = stockInPortfolio(portfolio_list, new_stock)
 	
 	if stock_index >= 0:
-		if int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"]) < 0:
+		if float(portfolio_list[stock_index]["Quantity"]) + float(new_stock["Quantity"]) < 0:
 			is_long = False
 	return is_long
 
@@ -272,29 +266,25 @@ def getStockQuotes(stockList):
 	
 	
 	return priceList
-	
+
+
 def postStockQuote(message):
 	
 	response = message.split()
-	
-
 	stock = response[-1].strip('"')
-	
-
 	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
 	body = str(getStockQuote(stock)).encode()
 	
 	return header, body
 
+#retrieves stock stats and 5y chart values from end point and returns JSON with this data
 def getStockStats(stock):
 
 	
 	response_buffer = BytesIO()
 	curl = pycurl.Curl()
-	curl.setopt(curl.SSL_VERIFYPEER, False)
-	
-	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/'+ stock +'/chart/5y?&chartCloseOnly=true&token='+token)
-	
+	curl.setopt(curl.SSL_VERIFYPEER, False)	
+	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/'+ stock +'/chart/5y?&chartCloseOnly=true&token='+token)	
 	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
 	curl.perform()
 	curl.close()
@@ -308,17 +298,16 @@ def getStockStats(stock):
 	curl.setopt(curl.URL, 'https://sandbox.iexapis.com/stable/stock/'+ stock +'/stats?token='+token)
 	curl.setopt(curl.WRITEFUNCTION, response_buffer.write)
 	curl.perform()
-	curl.close()
-	
-	stockStats = json.loads(response_buffer.getvalue())	
+	curl.close()	
+	stockStats = json.loads(response_buffer.getvalue())
+
 	stockData = {}
-
 	stockData["stockChart"] =stockChart
-
 	stockData["stockStats"] = stockStats
 
 	return stockData
 
+#receives stock symbol from client and sends 5y chart and stock data back to client
 def postGetStats(message):
 
 	response = message.split()
@@ -328,6 +317,7 @@ def postGetStats(message):
 	body = json.dumps(getStockStats(stock)).encode()
 	return header, body
 
+#receives transaction info from client and returns updated portfolio to client
 def postPortfolio(message):
 	
 	response = message.split()	
@@ -344,19 +334,19 @@ def postPortfolio(message):
 
 		if stock_index > -1:
 			
-			if (int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"]) > 0):
+			if (float(portfolio_list[stock_index]["Quantity"]) + float(new_stock["Quantity"]) > 0):
 				portfolio_list[stock_index]["Price"] = getAveragePrice(portfolio_list[stock_index], new_stock)
-				portfolio_list[stock_index]["Quantity"] = int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"])			
+				portfolio_list[stock_index]["Quantity"] = float(portfolio_list[stock_index]["Quantity"]) + float(new_stock["Quantity"])			
 				header = "HTTP/1.1 200 OK\r\n\r\n".encode()
 				body = "".encode()
-			elif (int(portfolio_list[stock_index]["Quantity"]) + int(new_stock["Quantity"]) == 0):
+			elif (float(portfolio_list[stock_index]["Quantity"]) + float(new_stock["Quantity"]) == 0):
 				del portfolio_list[stock_index]
 				header = "HTTP/1.1 200 OK\r\n\r\n".encode()
 				body = "".encode()
 
 		else:
 			
-			if int(new_stock["Quantity"]) > 0:
+			if float(new_stock["Quantity"]) > 0:
 				portfolio_list.append(new_stock)
 				header = "HTTP/1.1 200 OK\r\n\r\n".encode()
 				body = "".encode()
@@ -382,6 +372,7 @@ def postPortfolio(message):
 
 	return header, body
 
+#sends ticker list to client
 def tickers():
 
 	header = "HTTP/1.1 200 OK\r\n\r\n".encode()
@@ -399,6 +390,7 @@ def default(message):
 
 	return header, body
 
+#opens portfolio JSON file
 def getPortfolio():
 
 	with open('portfolio.json') as f:
@@ -406,6 +398,7 @@ def getPortfolio():
 	portfolio = jase['portfolio']
 	return portfolio
 
+#checks if a stock is in the portfolio returns stocks index or -1 if stock isn't present
 def stockInPortfolio(portfolio_list, new_stock):
 	stock_in_portfolio = -1
 	for i, current_stock in enumerate(portfolio_list):
@@ -413,13 +406,14 @@ def stockInPortfolio(portfolio_list, new_stock):
 			stock_in_portfolio = i	
 	return stock_in_portfolio
 
+#gets weighted average of stocks purchased that are of the same type
 def getAveragePrice(current_stock, new_stock):
 	
-	current_stock_paid = int(current_stock["Price"]) * int(current_stock["Quantity"])
+	current_stock_paid = float(current_stock["Price"]) * float(current_stock["Quantity"])
 	
-	new_stock_paid = int(new_stock["Price"]) * int(new_stock["Quantity"])
+	new_stock_paid = float(new_stock["Price"]) * float(new_stock["Quantity"])
 	
-	total_stock_quantity = int(current_stock["Quantity"]) + int(new_stock["Quantity"])
+	total_stock_quantity = float(current_stock["Quantity"]) + float(new_stock["Quantity"])
 	total_stock_paid = current_stock_paid + new_stock_paid
 	average_stock_price = total_stock_paid/total_stock_quantity
 	return average_stock_price
@@ -433,7 +427,7 @@ def process(connectionSocket) :
 
 	http_method = message.split()[0]
 
-
+	#my student ID which acts as the login credentials
 	user = "22011882"
 	password = "22011882"
 	credentials = "b'" +user + ":" + password + "'"
@@ -455,7 +449,7 @@ def process(connectionSocket) :
 				auth_present = True
 
 
-	
+	#get options
 	
 	if http_method == "GET":
 
@@ -471,23 +465,21 @@ def process(connectionSocket) :
 			#map requested resource (contained in the URL) to specific function which generates HTTP response
 			if not auth_present:
 				
-				responseHeader, responseBody = noAuth(message)
+				responseHeader, responseBody = noAuth()
 
 			elif resource == "":
-				responseHeader, responseBody = default(message)
-			elif resource == "welcome":
-				responseHeader,responseBody = welcome(message)
+				responseHeader, responseBody = portfolio(message)
 			elif resource == "portfolio":
 				responseHeader,responseBody = portfolio(message)
 			elif resource == "research":
 				responseHeader,responseBody = research(message)	
 			elif resource == "portfolio.json":
-				responseHeader,responseBody = jason(message)
+				responseHeader,responseBody = jason()
 			elif resource == "Tickers":
 				responseHeader,responseBody = tickers()
 			else:
 				responseHeader,responseBody = getFile(resource)
-	
+	#post options 
 	if 	http_method == "POST":
 		if len(message) > 1:
 
